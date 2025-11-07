@@ -36,7 +36,8 @@ const Join = () => {
             onClick={handleButtonClick}
             aria-label={buttonText}
           >
-            {isLoading ? 'Завантаження...' : buttonText}
+            {/* {isLoading ? 'Завантаження...' : buttonText} */}
+            {buttonText}
           </button>
         </div>
       </div>
