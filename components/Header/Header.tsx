@@ -1,5 +1,4 @@
-// import Link from 'next/link';
-// import AuthNavigation from '../AuthNavigation/AuthNavigation';
+// import { Icon } from '../Icon/Icon';
 import Logo from '../Logo/Logo';
 import Navigation from '../Navigation/Navigation';
 import css from './Header.module.css';
@@ -11,6 +10,7 @@ export default async function Header() {
       <div className={`container ${css.headerContainer}`}>
         <Logo />
         <Navigation className={css.nav} />
+        {/* <Icon name="icon-logout" size={24} /> */}
       </div>
     </header>
   );

@@ -58,6 +58,11 @@
   .loginLink {
     font-size: 18px;
     width: auto;
+    color: #fff;
+  }
+
+  .loginLinkRegister {
+    color: #000;
   }
 
   .loginItemRegister {
