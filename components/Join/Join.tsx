@@ -9,7 +9,7 @@ const Join = () => {
   const router = useRouter();
 
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
-  const isLoading = useAuthStore(state => state.isLoading);
+  //   const isLoading = useAuthStore(state => state.isLoading);
 
   const handleButtonClick = () => {
     if (isAuthenticated) {
