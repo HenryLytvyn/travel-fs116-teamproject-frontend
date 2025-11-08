@@ -1,8 +1,15 @@
-export default async function Popular() {
+import TravellersStories from '../TravellersStories/TravellersStories';
+
+interface PopularProps {
+  isAuthenticated: boolean;
+}
+
+export default function Popular({ isAuthenticated }: PopularProps) {
   return (
-    <section className="section">
-      <div className="container">
-        <h2>Popular</h2>
+    <section className="">
+      <div className="">
+        <h2 className="">Популярні історії</h2>
+        <TravellersStories isAuthenticated={isAuthenticated} />
       </div>
     </section>
   );
