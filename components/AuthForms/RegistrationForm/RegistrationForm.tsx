@@ -37,7 +37,7 @@ const RegistrationForm = () => {
           <Form className={styles.form}>
             <div className={styles.fieldGroup}>
               <label htmlFor="name" className={styles.label}>
-                Ім'я та Прізвище*
+                Ім&apos;я та Прізвище*
               </label>
               <Field
                 type="text"
