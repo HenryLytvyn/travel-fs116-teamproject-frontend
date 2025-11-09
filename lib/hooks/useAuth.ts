@@ -22,7 +22,7 @@ export const useAuth = () => {
       setUser(user);
 
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
     } finally {
       setIsSubmitting(false);
@@ -39,7 +39,7 @@ export const useAuth = () => {
       const user = await loginApi(values);
       setUser(user);
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
     } finally {
       setIsSubmitting(false);
