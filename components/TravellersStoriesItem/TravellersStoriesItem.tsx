@@ -46,21 +46,27 @@ export default function TravellersStoriesItem({ story, isAuthenticated }: Travel
     }
   };
 
+  const isoDateString = story.date;
+const dateObject = new Date(isoDateString);
+
+
+const normalFormatLocale = dateObject.toLocaleDateString(); 
+
   return (
     <li className={css.story}>
       <Image src={story.img} alt={story.title} width={400} height={200} className={css.story__img} />
 
       <div className={css.story__content}>
         
-        <p className={css.story__category}>{story.category}</p>
+        <p className={css.story__category}>{story.category.name}</p>
         <h3 className={css.story__title}>{story.title}</h3>
         <p className={css.story__text}>{story.article}</p>
               
       <div className={css.story__author}>
-      <Image src={story.author.avatarUrl} alt="Автор" className={css.story__avatar} />
+      <Image src={story.ownerId.avatarUrl} alt="Автор" width={48} height={48} className={css.story__avatar} />
       <div className={css.story__info}>
-        <p className={css.story__name}>{story.author.name}</p>
-            <p className={css.story__meta}>{story.date} •  <span className="favoriteCount">{favoriteCount}</span><Icon name="icon-bookmark" className={css.icon} /></p>
+        <p className={css.story__name}>{story.ownerId.name}</p>
+            <p className={css.story__meta}>{normalFormatLocale} •  <span className="favoriteCount">{favoriteCount}</span><Icon name="icon-bookmark" className={css.icon} /></p>
       </div>
     </div>
 <div className={css.story__actions}>

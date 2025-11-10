@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react';
 import TravellersStories from '../TravellersStories/TravellersStories';
 import css from './Popular.module.css';

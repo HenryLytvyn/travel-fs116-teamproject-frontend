@@ -1,19 +1,28 @@
+// import { User } from "./user";
+
 export type Story = {
     _id: string;
     img: string;
     title: string;
     article: string;
-    category: string;
-    author: Author;
+    category: Category;
+    ownerId: Author;
     date: string;
     favoriteCount: number;
     isFavorite?: boolean;
 }
 
+export interface Category {
+  _id: string;
+  name: string;
+}
+
 export interface Author {
-  id: string;
+  _id: string;
   name: string;
   avatarUrl: string;
+  articlesAmount?: number;
+  description?: string;
 }
 
 // export interface FetchStoriesParams {

@@ -2,12 +2,26 @@ import { api } from "./api";
 import { Story } from "@/types/story";
 
 
-export async function fetchStories(page = 1, perPage = 3): Promise<Story[]> {
-  const { data } = await api.get<{ stories: Story[] }>(
-    `/stories?page=${page}&perPage=${perPage}`
-  );
-  return data.stories;
+interface StoriesResponse {
+  status: number;
+  message: string;
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+  data: Story[];
 }
+
+
+export async function fetchStories(page = 1, perPage = 3): Promise<Story[]> {
+  const response = await api.get<StoriesResponse>(
+    `/stories`, { params: { page, perPage, sort: 'favoriteCount' } }
+  );
+  console.log(response);
+  return response.data?.data || [];
+}
+
+fetchStories(1, 3);
 
 
 

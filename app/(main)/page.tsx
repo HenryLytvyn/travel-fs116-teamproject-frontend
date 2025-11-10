@@ -5,13 +5,13 @@ import OurTravelers from '@/components/OurTravelers/OurTravelers';
 import Join from '@/components/Join/Join';
 
 export default function MainPage() {
-  const isAuthenticated = false;
+  
   
   return (
     <>
       <Hero />
       <About />
-      <Popular isAuthenticated={isAuthenticated} />
+      <Popular />
       <OurTravelers />
       <Join />
     </>
