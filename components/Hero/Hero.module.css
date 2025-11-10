@@ -1,10 +1,10 @@
 .hero {
   position: relative;
-  /* padding: 140px 0 104px; */
   color: #ffffff;
   background-color: #0b1f3a;
   min-height: 640px;
   overflow: hidden;
+  padding-top: 104px;
 }
 
 .hero::before {
@@ -40,7 +40,7 @@
   flex-direction: column;
   justify-content: flex-start;
   min-height: 420px;
-  padding-top: 128px;
+  padding-top: 24px;
   padding-bottom: 72px;
 }
 
@@ -108,14 +108,9 @@
 }
 
 @media (min-width: 768px) {
-  .hero {
-    /* padding: 176px 0 160px;
-    min-height: 720px; */
-  }
-
   .container {
     min-height: 560px;
-    padding-top: 152px;
+    padding-top: 48px;
     padding-bottom: 80px;
   }
 
@@ -132,11 +127,12 @@
   .hero {
     /* padding: 196px 0 176px;
     min-height: 900px; */
+    padding-top: 72px;
   }
 
   .container {
     /* min-height: 620px; */
-    padding-top: 72px;
+    padding-top: 0;
     padding-bottom: 96px;
   }
 
