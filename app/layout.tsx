@@ -2,15 +2,11 @@ import 'modern-normalize/modern-normalize.css';
 import './globals.css';
 
 import TanStackProvider from '@/components/TanStackProvider/TanStackProvider';
-import Header from '@/components/Header/Header';
-import Footer from '@/components/Footer/Footer';
 import { Nunito_Sans } from 'next/font/google';
 import { Sora } from 'next/font/google';
 import AuthProvider from '@/components/AuthProvider/AuthProvider';
-
-type ChildrenType = {
-  children: React.ReactNode;
-};
+import { Metadata } from 'next';
+import BreakpointInitializer from '@/components/Providers/BreakpointInitializer';
 
 const nunitoSans = Nunito_Sans({
   subsets: ['cyrillic'],
@@ -26,16 +22,22 @@ const sora = Sora({
   display: 'swap',
 });
 
-export default function RootLayout({ children }: Readonly<ChildrenType>) {
+export const metadata: Metadata = {
+  title: 'Travel App',
+  description: 'Travel application',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
+    <html lang="uk">
       <body className={`${nunitoSans.variable} ${sora.variable}`}>
+        <BreakpointInitializer />
         <TanStackProvider>
-          <AuthProvider>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </TanStackProvider>
       </body>
     </html>

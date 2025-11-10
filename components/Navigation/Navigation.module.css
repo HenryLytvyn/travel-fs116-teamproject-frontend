@@ -28,7 +28,7 @@
 }
 
 .navItemHeaderMain {
-  margin-right: 12px;
+  /* margin-right: 12px; */
 }
 
 .navItem:hover,
@@ -89,6 +89,7 @@
   }
 
   .navItem {
+    margin-right: 12px;
   }
 
   .navItem:active {
