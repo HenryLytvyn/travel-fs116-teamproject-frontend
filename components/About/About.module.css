@@ -37,10 +37,7 @@
 }
 
 .feature {
-  padding: 24px;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 20px 48px rgba(15, 37, 70, 0.08);
+  /* padding: 24px; */
   display: grid;
   gap: 16px;
 }
@@ -48,20 +45,14 @@
 .iconWrapper {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(
-    145deg,
-    rgba(50, 97, 255, 0.16),
-    rgba(50, 97, 255, 0.04)
-  );
   display: grid;
   place-items: center;
 }
 
 .icon {
-  width: 28px;
-  height: 28px;
-  fill: #3261ff;
+  width: 36.8px;
+  height: 36.8px;
+  fill: #000;
 }
 
 .featureTitle {
@@ -86,8 +77,9 @@
   }
 
   .intro {
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 533px);
+    align-items: flex-start;
+    column-gap: 24px;
   }
 
   .title {
@@ -98,6 +90,10 @@
     font-size: 18px;
   }
 
+  .intro .description {
+    max-width: 533px;
+  }
+
   .features {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 28px;
@@ -106,7 +102,7 @@
 
 @media (min-width: 1440px) {
   .section {
-    padding: 108px 0 96px;
+    padding: 72px 0 72px;
   }
 
   .container {
@@ -117,9 +113,9 @@
     font-size: 42px;
   }
 
-  .feature {
+  /* .feature {
     padding: 28px;
-  }
+  } */
 
   .featureTitle {
     font-size: 22px;
