@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { parse } from 'cookie';
 import { isAxiosError } from 'axios';
 import { logErrorResponse } from '../../_utils/utils';
+import { parseCookieOptions } from '../../_utils/cookieUtils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,55 +14,12 @@ export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const setCookie = apiRes.headers['set-cookie'];
 
+    // If backend returned cookies, set them
     if (setCookie) {
       const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
       for (const cookieStr of cookieArray) {
         const parsed = parse(cookieStr);
-        const options: {
-          expires?: Date;
-          path?: string;
-          maxAge?: number;
-          httpOnly?: boolean;
-          secure?: boolean;
-          sameSite?: 'strict' | 'lax' | 'none';
-        } = {};
-
-        // Parse expires date with validation
-        if (parsed.Expires) {
-          const expiresDate = new Date(parsed.Expires);
-          if (!isNaN(expiresDate.getTime())) {
-            options.expires = expiresDate;
-          }
-        }
-
-        // Parse path
-        if (parsed.Path) {
-          options.path = parsed.Path;
-        }
-
-        // Parse maxAge with validation
-        const maxAge = Number(parsed['Max-Age']);
-        if (!isNaN(maxAge) && maxAge > 0) {
-          options.maxAge = maxAge;
-        }
-
-        // Parse httpOnly flag
-        if (parsed.HttpOnly === 'true' || parsed.HttpOnly === '') {
-          options.httpOnly = true;
-        }
-
-        // Parse secure flag
-        if (parsed.Secure === 'true' || parsed.Secure === '') {
-          options.secure = true;
-        }
-
-        // Parse sameSite attribute
-        if (parsed.SameSite) {
-          const sameSite = parsed.SameSite.toLowerCase();
-          if (['strict', 'lax', 'none'].includes(sameSite)) {
-            options.sameSite = sameSite as 'strict' | 'lax' | 'none';
-          }
-        }
+        const options = parseCookieOptions(cookieStr);
 
         // Set accessToken cookie
         if (parsed.accessToken) {
@@ -78,17 +36,24 @@ export async function POST(req: NextRequest) {
           cookieStore.set('sessionId', parsed.sessionId, options);
         }
       }
-
-      return NextResponse.json(apiRes.data, { status: apiRes.status });
     }
 
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Always return the backend response with the actual status code
+    // If login failed, the backend will return an error status
+    return NextResponse.json(apiRes.data, { status: apiRes.status });
   } catch (error) {
     if (isAxiosError(error)) {
       logErrorResponse(error.response?.data);
+      // Return the actual backend error response
+      const status = error.response?.status || 500;
+      const errorData = error.response?.data || { error: error.message };
+      
       return NextResponse.json(
-        { error: error.message, response: error.response?.data },
-        { status: error.response?.status || 500 }
+        {
+          error: error.message,
+          response: errorData,
+        },
+        { status }
       );
     }
     logErrorResponse({ message: (error as Error).message });

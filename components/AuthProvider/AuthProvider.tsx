@@ -7,8 +7,6 @@ type Props = {
   children: React.ReactNode;
 };
 
-let hasInitialized = false;
-
 const AuthProvider = ({ children }: Props) => {
   const { setUser, clearIsAuthenticated, setLoading } = useAuthStore();
   const effectRunRef = useRef(false);
@@ -17,63 +15,63 @@ const AuthProvider = ({ children }: Props) => {
     if (effectRunRef.current) return;
     effectRunRef.current = true;
 
-    if (hasInitialized) return;
-    hasInitialized = true;
-
-    if (typeof window !== 'undefined') {
-      const isAuthPage = window.location.pathname.startsWith('/auth/');
-      if (isAuthPage) {
-        // On auth pages, just clear loading and don't check auth
-        setLoading(false);
-        return;
-      }
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
     }
 
+    const pathname = window.location.pathname;
+    const isAuthPage = pathname.startsWith('/auth/');
+    const isProtectedRoute = pathname.startsWith('/profile');
+
+    // Get persisted user from store
     const persistedUser = useAuthStore.getState().user;
+
+    if (isAuthPage) {
+      setLoading(false);
+      return;
+    }
 
     if (persistedUser) {
       setLoading(false);
-
       getMe()
         .then(currentUser => {
           if (currentUser) {
             setUser(currentUser);
-          } else {
           }
         })
         .catch((error: unknown) => {
-          // Only clear auth on 401 (unauthorized)
           const axiosError = error as { response?: { status?: number } };
-          const status = axiosError?.response?.status;
-          if (status === 401) {
+          if (axiosError?.response?.status === 401) {
             clearIsAuthenticated();
           }
         });
       return;
     }
 
-    // No user in store - try to fetch from server
-    setLoading(true);
-    getMe()
-      .then(fetchedUser => {
-        if (fetchedUser) {
-          setUser(fetchedUser);
-        } else {
-          clearIsAuthenticated();
-        }
-      })
-      .catch((error: unknown) => {
-        const axiosError = error as { response?: { status?: number } };
-        const status = axiosError?.response?.status;
-        if (status === 401) {
-          clearIsAuthenticated();
-        } else {
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    if (isProtectedRoute) {
+      setLoading(true);
+      getMe()
+        .then(fetchedUser => {
+          if (fetchedUser) {
+            setUser(fetchedUser);
+          } else {
+            clearIsAuthenticated();
+          }
+        })
+        .catch((error: unknown) => {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError?.response?.status === 401) {
+            clearIsAuthenticated();
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [setUser, clearIsAuthenticated, setLoading]);
 
   return <>{children}</>;
 };

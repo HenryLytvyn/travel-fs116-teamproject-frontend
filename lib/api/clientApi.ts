@@ -1,5 +1,5 @@
 import { User } from '@/types/user';
-import { api, ApiError } from './api';
+import { api } from './api';
 import { LoginRequest, RegisterRequest } from '@/types/auth';
 import { extractUser } from './errorHandler';
 
@@ -46,10 +46,12 @@ export const logout = async () => {
  */
 export const checkSession = async (): Promise<boolean> => {
   try {
-    await api.get('/users/me');
-    return true;
+    const response = await api.get('/users/me');
+    return response.status >= 200 && response.status < 300;
   } catch (error) {
-    const axiosError = error as ApiError;
-    return axiosError?.response?.status !== 401;
+    // const axiosError = error as ApiError;
+    console.log(error);
+
+    return false;
   }
 };

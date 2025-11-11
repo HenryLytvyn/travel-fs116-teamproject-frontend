@@ -63,3 +63,67 @@ export function extractUser<T>(
 
   return null;
 }
+
+/**
+ * Extract user-friendly error message from error response
+ */
+export function extractErrorMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') {
+    return 'Сталася помилка';
+  }
+
+  // Check if error has a response property (Axios error structure)
+  const axiosError = error as {
+    response?: {
+      data?: {
+        message?: string;
+        error?: string;
+        response?: {
+          message?: string;
+          status?: number;
+          data?: { message?: string };
+        };
+      };
+    };
+    message?: string;
+  };
+
+  // Try to extract message from nested response structure (Next.js API route format)
+  if (axiosError.response?.data) {
+    const errorData = axiosError.response.data;
+
+    // Check for nested response (from Next.js API route)
+    if (errorData.response) {
+      const nestedResponse = errorData.response;
+      if (nestedResponse.message) {
+        return nestedResponse.message;
+      }
+      if (nestedResponse.data?.message) {
+        return nestedResponse.data.message;
+      }
+    }
+
+    // Check for direct message/error in response data
+    if (errorData.message) {
+      return errorData.message;
+    }
+    if (errorData.error) {
+      return errorData.error;
+    }
+  }
+
+  // Fall back to error message
+  if (axiosError.message) {
+    // Don't show generic axios error messages
+    if (
+      axiosError.message.includes('Request failed') ||
+      axiosError.message.includes('Network Error') ||
+      axiosError.message.includes('timeout')
+    ) {
+      return "Помилка з'єднання з сервером";
+    }
+    return axiosError.message;
+  }
+
+  return 'Сталася невідома помилка';
+}

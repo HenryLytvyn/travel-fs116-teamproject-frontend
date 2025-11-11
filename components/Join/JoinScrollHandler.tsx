@@ -7,13 +7,15 @@ const JoinScrollHandler = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
       if (hash === '#join') {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           const joinSection = document.getElementById('join');
           if (joinSection) {
             joinSection.scrollIntoView({ behavior: 'smooth' });
             window.history.replaceState(null, '', window.location.pathname);
           }
         }, 100);
+
+        return () => clearTimeout(timeoutId);
       }
     }
   }, []);

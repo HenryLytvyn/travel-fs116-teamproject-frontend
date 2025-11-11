@@ -30,7 +30,6 @@ export async function POST() {
   } catch (error) {
     logErrorResponse({ message: (error as Error).message });
   } finally {
-    // Always clear all cookies
     cookieStore.delete('accessToken');
     cookieStore.delete('refreshToken');
     cookieStore.delete('sessionId');

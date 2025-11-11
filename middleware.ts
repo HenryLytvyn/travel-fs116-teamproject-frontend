@@ -33,13 +33,15 @@ export async function middleware(request: NextRequest) {
             const parsed = parse(cookieStr);
             const options = {
               expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
-              path: parsed.Path,
-              maxAge: Number(parsed['Max-Age']),
+              path: parsed.Path || '/',
+              maxAge: Number(parsed['Max-Age']) || undefined,
             };
             if (parsed.accessToken)
               cookieStore.set('accessToken', parsed.accessToken, options);
             if (parsed.refreshToken)
               cookieStore.set('refreshToken', parsed.refreshToken, options);
+            if (parsed.sessionId)
+              cookieStore.set('sessionId', parsed.sessionId, options);
           }
           // Якщо сесія все ще активна:
           // для публічного маршруту — виконуємо редірект на головну.
@@ -59,11 +61,7 @@ export async function middleware(request: NextRequest) {
             });
           }
         }
-      } catch {
-        // Refresh failed - tokens are invalid or expired
-        // Clear cookies and continue with normal flow
-        // Don't throw - let the normal route handling continue
-      }
+      } catch {}
     }
     // Якщо refreshToken або сесії немає:
     // публічний маршрут — дозволяємо доступ
@@ -86,6 +84,8 @@ export async function middleware(request: NextRequest) {
   if (isPrivateRoute) {
     return NextResponse.next();
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

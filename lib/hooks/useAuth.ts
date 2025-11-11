@@ -8,6 +8,7 @@ import {
   register as registerApi,
   logout as logoutApi,
 } from '@/lib/api/clientApi';
+import { extractErrorMessage } from '@/lib/api/errorHandler';
 import { LoginRequest, RegisterRequest } from '@/types/auth';
 import toast from 'react-hot-toast';
 
@@ -27,8 +28,7 @@ export const useAuth = () => {
       toast.success('Реєстрація успішна!');
       setTimeout(() => router.push('/'), 200);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Помилка реєстрації';
+      const message = extractErrorMessage(error);
       toast.error(message);
       throw error;
     } finally {
@@ -47,7 +47,7 @@ export const useAuth = () => {
       toast.success(`Вітаємо, ${user.name || 'користувач'}!`);
       router.push('/');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Помилка входу';
+      const message = extractErrorMessage(error);
       toast.error(message);
       throw error;
     } finally {

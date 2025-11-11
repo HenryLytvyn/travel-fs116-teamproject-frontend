@@ -4,6 +4,7 @@ import { api } from '../../api';
 import { parse } from 'cookie';
 import { isAxiosError } from 'axios';
 import { logErrorResponse } from '../../_utils/utils';
+import { parseCookieOptions } from '../../_utils/cookieUtils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,51 +36,7 @@ export async function POST(request: NextRequest) {
       // Parse all cookies with proper options
       for (const cookieStr of cookieArray) {
         const parsed = parse(cookieStr);
-        const options: {
-          expires?: Date;
-          path?: string;
-          maxAge?: number;
-          httpOnly?: boolean;
-          secure?: boolean;
-          sameSite?: 'strict' | 'lax' | 'none';
-        } = {};
-
-        // Parse expires date with validation
-        if (parsed.Expires) {
-          const expiresDate = new Date(parsed.Expires);
-          if (!isNaN(expiresDate.getTime())) {
-            options.expires = expiresDate;
-          }
-        }
-
-        // Parse path
-        if (parsed.Path) {
-          options.path = parsed.Path;
-        }
-
-        // Parse maxAge with validation
-        const maxAge = Number(parsed['Max-Age']);
-        if (!isNaN(maxAge) && maxAge > 0) {
-          options.maxAge = maxAge;
-        }
-
-        // Parse httpOnly flag
-        if (parsed.HttpOnly === 'true' || parsed.HttpOnly === '') {
-          options.httpOnly = true;
-        }
-
-        // Parse secure flag
-        if (parsed.Secure === 'true' || parsed.Secure === '') {
-          options.secure = true;
-        }
-
-        // Parse sameSite attribute
-        if (parsed.SameSite) {
-          const sameSite = parsed.SameSite.toLowerCase();
-          if (['strict', 'lax', 'none'].includes(sameSite)) {
-            options.sameSite = sameSite as 'strict' | 'lax' | 'none';
-          }
-        }
+        const options = parseCookieOptions(cookieStr);
 
         // Set accessToken cookie
         if (parsed.accessToken) {
@@ -97,7 +54,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // If 'next' query param exists, redirect (for browser navigation)
       if (next) {
         return NextResponse.redirect(new URL(next, request.url), {
           headers: {
@@ -106,8 +62,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Otherwise, return JSON (for API calls from interceptor)
-      // This is the default behavior for programmatic calls
       return NextResponse.json(
         {
           status: 200,

@@ -53,9 +53,14 @@ api.interceptors.response.use(
     if (originalRequest.url?.includes('/auth/refresh')) {
       return Promise.reject(error);
     }
+    // Don't retry login/register endpoints
+    if (
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/login')
+    ) {
+      return Promise.reject(error);
+    }
 
-    // Don't try to refresh if we're on auth pages (login/register)
-    // These pages don't have tokens, so refresh will always fail
     if (typeof window !== 'undefined') {
       const isAuthPage = window.location.pathname.startsWith('/auth/');
       if (isAuthPage) {
@@ -66,8 +71,6 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Check if the error indicates missing tokens (not just expired)
-      // Error structure: { error: string, response: { status, message, data: { message } } }
       const errorData = error.response?.data as
         | {
             message?: string;
@@ -110,8 +113,6 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Call Next.js API route to refresh tokens
-        // Next.js API route will handle cookie forwarding to backend
         await api.post('/auth/refresh', {});
 
         // Process queued requests
@@ -131,8 +132,6 @@ api.interceptors.response.use(
         // Clear queue
         processQueue(refreshError, null);
 
-        // If refresh failed because tokens are missing, don't retry
-        // Just reject the error and let the component handle it
         if (isRefreshMissingToken) {
           return Promise.reject(error); // Return original error, not refresh error
         }
