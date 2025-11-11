@@ -1,20 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { api } from '../../api';
 import { cookies } from 'next/headers';
+import { api } from '../../api';
 import { parse } from 'cookie';
 import { isAxiosError } from 'axios';
 import { logErrorResponse } from '../../_utils/utils';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const apiRes = await api.post('auth/login', body);
-
     const cookieStore = await cookies();
-    const setCookie = apiRes.headers['set-cookie'];
+    const refreshToken = cookieStore.get('refreshToken')?.value;
+    const sessionId = cookieStore.get('sessionId')?.value;
+    const next = request.nextUrl.searchParams.get('next'); // Only redirect if explicitly provided
 
+    if (!refreshToken || !sessionId) {
+      return NextResponse.json(
+        { error: 'Refresh token or session ID missing' },
+        { status: 401 }
+      );
+    }
+
+    const apiRes = await api.post(
+      'auth/refresh',
+      {},
+      {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+      }
+    );
+    const setCookie = apiRes.headers['set-cookie'];
     if (setCookie) {
       const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+
+      // Parse all cookies with proper options
       for (const cookieStr of cookieArray) {
         const parsed = parse(cookieStr);
         const options: {
@@ -79,16 +97,42 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return NextResponse.json(apiRes.data, { status: apiRes.status });
-    }
+      // If 'next' query param exists, redirect (for browser navigation)
+      if (next) {
+        return NextResponse.redirect(new URL(next, request.url), {
+          headers: {
+            'set-cookie': cookieStore.toString(),
+          },
+        });
+      }
 
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Otherwise, return JSON (for API calls from interceptor)
+      // This is the default behavior for programmatic calls
+      return NextResponse.json(
+        {
+          status: 200,
+          message: 'Session refreshed successfully',
+          data: apiRes.data,
+        },
+        {
+          status: 200,
+          headers: {
+            'set-cookie': cookieStore.toString(),
+          },
+        }
+      );
+    }
+    return NextResponse.json(
+      { error: 'Failed to refresh session' },
+      { status: 401 }
+    );
   } catch (error) {
     if (isAxiosError(error)) {
       logErrorResponse(error.response?.data);
+      const status = error.response?.status || 500;
       return NextResponse.json(
         { error: error.message, response: error.response?.data },
-        { status: error.response?.status || 500 }
+        { status }
       );
     }
     logErrorResponse({ message: (error as Error).message });

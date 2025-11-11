@@ -18,16 +18,66 @@ export async function POST(req: NextRequest) {
       const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
       for (const cookieStr of cookieArray) {
         const parsed = parse(cookieStr);
+        const options: {
+          expires?: Date;
+          path?: string;
+          maxAge?: number;
+          httpOnly?: boolean;
+          secure?: boolean;
+          sameSite?: 'strict' | 'lax' | 'none';
+        } = {};
 
-        const options = {
-          expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
-          path: parsed.Path,
-          maxAge: Number(parsed['Max-Age']),
-        };
-        if (parsed.accessToken)
+        // Parse expires date with validation
+        if (parsed.Expires) {
+          const expiresDate = new Date(parsed.Expires);
+          if (!isNaN(expiresDate.getTime())) {
+            options.expires = expiresDate;
+          }
+        }
+
+        // Parse path
+        if (parsed.Path) {
+          options.path = parsed.Path;
+        }
+
+        // Parse maxAge with validation
+        const maxAge = Number(parsed['Max-Age']);
+        if (!isNaN(maxAge) && maxAge > 0) {
+          options.maxAge = maxAge;
+        }
+
+        // Parse httpOnly flag
+        if (parsed.HttpOnly === 'true' || parsed.HttpOnly === '') {
+          options.httpOnly = true;
+        }
+
+        // Parse secure flag
+        if (parsed.Secure === 'true' || parsed.Secure === '') {
+          options.secure = true;
+        }
+
+        // Parse sameSite attribute
+        if (parsed.SameSite) {
+          const sameSite = parsed.SameSite.toLowerCase();
+          if (['strict', 'lax', 'none'].includes(sameSite)) {
+            options.sameSite = sameSite as 'strict' | 'lax' | 'none';
+          }
+        }
+
+        // Set accessToken cookie
+        if (parsed.accessToken) {
           cookieStore.set('accessToken', parsed.accessToken, options);
-        if (parsed.refreshToken)
+        }
+
+        // Set refreshToken cookie
+        if (parsed.refreshToken) {
           cookieStore.set('refreshToken', parsed.refreshToken, options);
+        }
+
+        // Set sessionId cookie
+        if (parsed.sessionId) {
+          cookieStore.set('sessionId', parsed.sessionId, options);
+        }
       }
       return NextResponse.json(apiRes.data, { status: apiRes.status });
     }
@@ -38,7 +88,7 @@ export async function POST(req: NextRequest) {
       logErrorResponse(error.response?.data);
       return NextResponse.json(
         { error: error.message, response: error.response?.data },
-        { status: error.status }
+        { status: error.response?.status || 500 }
       );
     }
     logErrorResponse({ message: (error as Error).message });

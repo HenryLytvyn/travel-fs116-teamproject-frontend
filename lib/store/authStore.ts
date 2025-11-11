@@ -9,6 +9,7 @@ type AuthStore = {
   setUser: (user: User) => void;
   clearIsAuthenticated: () => void;
   setLoading: (loading: boolean) => void;
+  logout: () => void;
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -19,15 +20,19 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: true,
 
       setUser: (user: User) => {
-        set(() => ({ user, isAuthenticated: true, isLoading: false }));
+        set({ user, isAuthenticated: true, isLoading: false });
       },
 
       clearIsAuthenticated: () => {
-        set(() => ({ user: null, isAuthenticated: false, isLoading: false }));
+        set({ user: null, isAuthenticated: false, isLoading: false });
       },
 
       setLoading: (loading: boolean) => {
-        set(() => ({ isLoading: loading }));
+        set({ isLoading: loading });
+      },
+
+      logout: () => {
+        set({ user: null, isAuthenticated: false, isLoading: false });
       },
     }),
     {

@@ -1,52 +1,79 @@
 'use client';
-
-import { checkSession, getMe } from '@/lib/api/clientApi';
+import { getMe } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 type Props = {
   children: React.ReactNode;
 };
 
+let hasInitialized = false;
+
 const AuthProvider = ({ children }: Props) => {
-  const setUser = useAuthStore(state => state.setUser);
-  const clearIsAuthenticated = useAuthStore(
-    state => state.clearIsAuthenticated
-  );
-  const setLoading = useAuthStore(state => state.setLoading);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { setUser, clearIsAuthenticated, setLoading } = useAuthStore();
+  const effectRunRef = useRef(false);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      if (isInitialized) return;
+    if (effectRunRef.current) return;
+    effectRunRef.current = true;
 
-      try {
-        setLoading(true);
-        const hasSession = await checkSession();
+    if (hasInitialized) return;
+    hasInitialized = true;
 
-        if (hasSession) {
-          const user = await getMe();
+    if (typeof window !== 'undefined') {
+      const isAuthPage = window.location.pathname.startsWith('/auth/');
+      if (isAuthPage) {
+        // On auth pages, just clear loading and don't check auth
+        setLoading(false);
+        return;
+      }
+    }
 
-          if (user) {
-            setUser(user);
+    const persistedUser = useAuthStore.getState().user;
+
+    if (persistedUser) {
+      setLoading(false);
+
+      getMe()
+        .then(currentUser => {
+          if (currentUser) {
+            setUser(currentUser);
           } else {
-            console.warn('Session exists but no user data found');
+          }
+        })
+        .catch((error: unknown) => {
+          // Only clear auth on 401 (unauthorized)
+          const axiosError = error as { response?: { status?: number } };
+          const status = axiosError?.response?.status;
+          if (status === 401) {
             clearIsAuthenticated();
           }
+        });
+      return;
+    }
+
+    // No user in store - try to fetch from server
+    setLoading(true);
+    getMe()
+      .then(fetchedUser => {
+        if (fetchedUser) {
+          setUser(fetchedUser);
         } else {
           clearIsAuthenticated();
         }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        clearIsAuthenticated();
-      } finally {
+      })
+      .catch((error: unknown) => {
+        const axiosError = error as { response?: { status?: number } };
+        const status = axiosError?.response?.status;
+        if (status === 401) {
+          clearIsAuthenticated();
+        } else {
+        }
+      })
+      .finally(() => {
         setLoading(false);
-        setIsInitialized(true);
-      }
-    };
-
-    fetchSession();
-  }, [clearIsAuthenticated, setUser, setLoading, isInitialized]);
+      });
+  }, []);
 
   return <>{children}</>;
 };

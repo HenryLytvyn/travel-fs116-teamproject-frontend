@@ -1,67 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { parse } from 'cookie';
+import { checkServerSession } from './lib/api/serverApi';
 
-// Routes that require authentication (maps to backend private routes)
-const privateRoutes = [
-  '/users/me/profile',
-  '/profile', // Maps to backend: GET /users/me/profile
-];
-
-// Auth routes that authenticated users shouldn't access
-const publicAuthRoutes = ['/auth/login', '/auth/register'];
+const privateRoutes = ['/profile'];
+const publicRoutes = ['/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
+  const refreshToken = cookieStore.get('refreshToken')?.value;
 
-  const isPublicAuthRoute = publicAuthRoutes.some(route =>
-    pathname.startsWith(route)
-  );
-
-  // Check if route is private
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPrivateRoute = privateRoutes.some(route =>
     pathname.startsWith(route)
   );
 
-  // If no access token
   if (!accessToken) {
-    // Allow access to public auth routes (login/register)
-    if (isPublicAuthRoute) {
+    if (refreshToken) {
+      // Якщо accessToken відсутній, але є refreshToken — потрібно перевірити сесію навіть для публічного маршруту,
+      // адже сесія може залишатися активною, і тоді потрібно заборонити доступ до публічного маршруту.
+      try {
+        const data = await checkServerSession();
+        const setCookie = data.headers['set-cookie'];
+
+        if (setCookie) {
+          const cookieArray = Array.isArray(setCookie)
+            ? setCookie
+            : [setCookie];
+          for (const cookieStr of cookieArray) {
+            const parsed = parse(cookieStr);
+            const options = {
+              expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
+              path: parsed.Path,
+              maxAge: Number(parsed['Max-Age']),
+            };
+            if (parsed.accessToken)
+              cookieStore.set('accessToken', parsed.accessToken, options);
+            if (parsed.refreshToken)
+              cookieStore.set('refreshToken', parsed.refreshToken, options);
+          }
+          // Якщо сесія все ще активна:
+          // для публічного маршруту — виконуємо редірект на головну.
+          if (isPublicRoute) {
+            return NextResponse.redirect(new URL('/', request.url), {
+              headers: {
+                Cookie: cookieStore.toString(),
+              },
+            });
+          }
+          // для приватного маршруту — дозволяємо доступ
+          if (isPrivateRoute) {
+            return NextResponse.next({
+              headers: {
+                Cookie: cookieStore.toString(),
+              },
+            });
+          }
+        }
+      } catch {
+        // Refresh failed - tokens are invalid or expired
+        // Clear cookies and continue with normal flow
+        // Don't throw - let the normal route handling continue
+      }
+    }
+    // Якщо refreshToken або сесії немає:
+    // публічний маршрут — дозволяємо доступ
+    if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // Redirect to login for private routes
+    // приватний маршрут — редірект на сторінку входу
     if (isPrivateRoute) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
-
-    // Allow access to all other routes (public content)
-    return NextResponse.next();
   }
 
-  // If access token exists (user is authenticated)
-  // Redirect authenticated users away from auth pages
-  if (isPublicAuthRoute) {
+  // Якщо accessToken існує:
+  // публічний маршрут — виконуємо редірект на головну
+  if (isPublicRoute) {
     return NextResponse.redirect(new URL('/', request.url));
   }
-
-  // Allow access to private routes
+  // приватний маршрут — дозволяємо доступ
   if (isPrivateRoute) {
     return NextResponse.next();
   }
-
-  // Allow access to all other routes
-  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    // Profile routes (maps to backend /users/me/profile)
-    '/users/me/profile',
-    '/profile/:path*',
-    // Auth routes
-    '/auth/login',
-    '/auth/register',
-  ],
+  matcher: ['/profile/:path*', '/auth/login', '/auth/register'],
 };

@@ -10,14 +10,13 @@ export type BackendResponse<T> = {
  * Check if an object looks like a User (has id and email)
  */
 function isUserLike(obj: unknown): obj is { id: unknown; email: unknown } {
-  return (
-    !!obj &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'email' in obj &&
-    !!obj.id &&
-    !!obj.email
-  );
+  if (!obj || typeof obj !== 'object') return false;
+
+  if (!('email' in obj) || !obj.email) return false;
+
+  const hasId = ('id' in obj && !!obj.id) || ('_id' in obj && !!obj._id);
+
+  return hasId;
 }
 
 /**

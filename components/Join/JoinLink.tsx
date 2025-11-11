@@ -8,7 +8,7 @@ const JoinLink = () => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const isLoading = useAuthStore(state => state.isLoading);
 
-  const href = isAuthenticated ? '/users/me/profile' : '/auth/register';
+  const href = isAuthenticated ? '/profile' : '/auth/register';
   const linkText = isAuthenticated ? 'Збережені' : 'Зареєструватися';
 
   return (
