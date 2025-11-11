@@ -5,16 +5,14 @@ import css from './Main.module.css';
 
 interface MainLayoutProps {
   children: ReactNode;
-  modal: ReactNode;
 }
 
-export default function MainLayout({ children, modal }: MainLayoutProps) {
+export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
       <Header />
       <main className={css.main}>{children}</main>
       <Footer />
-      <div style={{ position: 'fixed', top: 0, left: 0 }}>{modal}</div>
     </>
   );
 }
