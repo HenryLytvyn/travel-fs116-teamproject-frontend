@@ -1,52 +1,77 @@
 'use client';
-
-import { checkSession, getMe } from '@/lib/api/clientApi';
+import { getMe } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 type Props = {
   children: React.ReactNode;
 };
 
 const AuthProvider = ({ children }: Props) => {
-  const setUser = useAuthStore(state => state.setUser);
-  const clearIsAuthenticated = useAuthStore(
-    state => state.clearIsAuthenticated
-  );
-  const setLoading = useAuthStore(state => state.setLoading);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { setUser, clearIsAuthenticated, setLoading } = useAuthStore();
+  const effectRunRef = useRef(false);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      if (isInitialized) return;
+    if (effectRunRef.current) return;
+    effectRunRef.current = true;
 
-      try {
-        setLoading(true);
-        const hasSession = await checkSession();
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
 
-        if (hasSession) {
-          const user = await getMe();
+    const pathname = window.location.pathname;
+    const isAuthPage = pathname.startsWith('/auth/');
+    const isProtectedRoute = pathname.startsWith('/profile');
 
-          if (user) {
-            setUser(user);
-          } else {
-            console.warn('Session exists but no user data found');
+    // Get persisted user from store
+    const persistedUser = useAuthStore.getState().user;
+
+    if (isAuthPage) {
+      setLoading(false);
+      return;
+    }
+
+    if (persistedUser) {
+      setLoading(false);
+      getMe()
+        .then(currentUser => {
+          if (currentUser) {
+            setUser(currentUser);
+          }
+        })
+        .catch((error: unknown) => {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError?.response?.status === 401) {
             clearIsAuthenticated();
           }
-        } else {
-          clearIsAuthenticated();
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        clearIsAuthenticated();
-      } finally {
-        setLoading(false);
-        setIsInitialized(true);
-      }
-    };
+        });
+      return;
+    }
 
-    fetchSession();
-  }, [clearIsAuthenticated, setUser, setLoading, isInitialized]);
+    if (isProtectedRoute) {
+      setLoading(true);
+      getMe()
+        .then(fetchedUser => {
+          if (fetchedUser) {
+            setUser(fetchedUser);
+          } else {
+            clearIsAuthenticated();
+          }
+        })
+        .catch((error: unknown) => {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError?.response?.status === 401) {
+            clearIsAuthenticated();
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [setUser, clearIsAuthenticated, setLoading]);
 
   return <>{children}</>;
 };
